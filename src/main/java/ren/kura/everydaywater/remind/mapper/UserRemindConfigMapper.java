@@ -1,8 +1,8 @@
-package ren.kura.everydaywater.water.mapper;
+package ren.kura.everydaywater.remind.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import ren.kura.everydaywater.water.entity.WaterNumConfig;
+import ren.kura.everydaywater.remind.entity.UserRemindConfig;
 
 /**
  * <p>项目名称: everydaywater
@@ -15,5 +15,5 @@ import ren.kura.everydaywater.water.entity.WaterNumConfig;
  * @date: 2020/10/11 16:48
  */
 @Mapper
-public interface WaterNumConfigMapper extends BaseMapper<WaterNumConfig> {
+public interface UserRemindConfigMapper extends BaseMapper<UserRemindConfig> {
 }
