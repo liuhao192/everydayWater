@@ -1,4 +1,4 @@
-#端口 路径配置
+#端口路径配置
 server:
   port: 9048
 spring:
@@ -48,6 +48,32 @@ spring:
         # 登录用户名/密码
         login-username: root
         login-password: 123
+  ## quartz定时任务,采用数据库方式
+  quartz:
+    job-store-type: jdbc
+    initialize-schema: embedded
+    #设置自动启动，默认为 true
+    auto-startup: true
+    #启动时更新己存在的Job
+    overwrite-existing-jobs: true
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: MyScheduler
+            instanceId: AUTO
+          jobStore:
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            tablePrefix: QRTZ_
+            isClustered: true
+            misfireThreshold: 60000
+            clusterCheckinInterval: 10000
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 10
+            threadPriority: 5
+            threadsInheritContextClassLoaderOfInitializingThread: true
 #mybatis plus 设置
 mybatis-plus:
   mapper-locations: classpath*:ren/kura/everydaywater/**/xml/*Mapper.xml
@@ -57,4 +83,22 @@ mybatis-plus:
     #configuration:
     # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+rabbitmq:
+host: 127.0.0.1
+port: 5672
+virtual-host: testHost
+username: guest
+password: guest
 
+
+wechat:
+  appId: wx19d88f537983439b
+  secret: 7b62f8efd69c55831f7eeb2e3343c291
+  reminderTemplateId: J2qZ6dZgZK3SjIxbiAUm4u_HG3aTJNMJp1XI_d8uGRM
+  miniProgramState: trial
+  page: pages/myinfo/check/check
+  lang: zh_CN
+wechatapi:
+  codeSession: https://api.weixin.qq.com/sns/jscode2session?appid={appId}&secret={secret}&js_code={jsCode}&grant_type=authorization_code
+  accessToken: https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={appId}&secret={secret}
+  uniformMessage: https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=

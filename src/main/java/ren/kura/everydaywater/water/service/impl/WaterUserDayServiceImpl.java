@@ -55,7 +55,6 @@ public class WaterUserDayServiceImpl extends ServiceImpl<WaterUserDayMapper, Wat
      * {@inheritDoc}
      */
     @Override
-    @Transactional(rollbackFor = RuntimeException.class)
     public WaterUserDay addOneWater(String openId) {
         //查询今天的是否存在数据
         WaterUserDay waterUserDay = getUserTodayByOpenId(openId);
@@ -69,33 +68,41 @@ public class WaterUserDayServiceImpl extends ServiceImpl<WaterUserDayMapper, Wat
             newWaterUserDay.setDayDate(TimeUtils.getFormatDate());
             newWaterUserDay.setDeleteFlag("0");
             newWaterUserDay.setStandard(isStandard(openId, 1));
-            waterUserCountService.updateUserDrink(openId);
             this.save(newWaterUserDay);
             return newWaterUserDay;
         } else {
             int num = waterUserDay.getNum();
             waterUserDay.setNum(++num);
             int standard = waterUserDay.getStandard();
-            //未达标
+            //未达标,判断是否达标
             if (standard == 0) {
                 waterUserDay.setStandard(isStandard(openId, num));
             }
-            waterUserCountService.updateUserDrinkNum(openId);
             this.updateById(waterUserDay);
             return waterUserDay;
         }
     }
 
+/**
+ *  WaterUserDayServiceImpl:: isStandard
+ *  <p>本次是否达标
+ *  <p>HISTORY: 2020/10/23 liuha : Created.
+ *  @param    openId  微信的用户凭证
+ *  @param    num  本次喝水次数
+ *  @return   int  The maximum speed of the object.
 
+ */
     private int isStandard(String openId, int num) {
         WaterNumConfig waterNumConfig = waterNumConfigService.getNumConfigByOpenId(openId);
         //达标
         if (num >= waterNumConfig.getNum()) {
+            //新增达标天数
             waterUserCountService.updateStandardDay(openId);
             return 1;
         }
         return 0;
     }
+    
 
 
 }

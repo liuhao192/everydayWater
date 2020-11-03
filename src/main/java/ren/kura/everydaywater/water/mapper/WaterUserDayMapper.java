@@ -6,7 +6,7 @@ import ren.kura.everydaywater.water.entity.WaterUserDay;
 
 /**
  * <p>项目名称: everydaywater
- * <p>文件名称: WaterUserDayMapper.java
+ * <p>文件名称: UserRemindLogMapper.java
  * <p>描述: [类型描述]
  * <p>HISTORY: 2020/10/11 liuha : Created
  *

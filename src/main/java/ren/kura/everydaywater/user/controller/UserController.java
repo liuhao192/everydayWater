@@ -2,7 +2,7 @@ package ren.kura.everydaywater.user.controller;
 
 /**
  * <p>项目名称: everydaywater
- * <p>文件名称: WeChatController.java
+ * <p>文件名称: UserController.java
  * <p>描述: [用户信息模块的Controller层]
  * <p>HISTORY: 2020/10/10 liuha : Created
  *

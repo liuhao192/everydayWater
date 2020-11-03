@@ -3,6 +3,7 @@ package ren.kura.everydaywater.water.controller;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ren.kura.everydaywater.common.aspect.annotation.AutoLog;
 import ren.kura.everydaywater.common.utils.Result;
+import ren.kura.everydaywater.remind.service.IUserRemindDataService;
 import ren.kura.everydaywater.water.dto.WaterDaily;
 import ren.kura.everydaywater.water.entity.WaterNumConfig;
 import ren.kura.everydaywater.water.entity.WaterUserCount;
@@ -48,64 +50,71 @@ public class WaterController {
     private IWaterUserCountService waterUserCountService;
     @Autowired
     private IWaterUserLogService waterUserLogService;
-
+    @Autowired
+    private IUserRemindDataService userRemindDataService;
     @AutoLog(value = "查询每日的喝水信息")
     @GetMapping(value = "/daily/openid/{openid}")
-    public Result getWaterDaily(@PathVariable("openid") String openId ){
+    public Result getWaterDaily(@PathVariable("openid") String openId) {
         log.info("查询每日喝水信息 用户凭证 openId:{} 开始", openId);
         WaterDaily waterDailyInfo = new WaterDaily();
         //今日目标
-        WaterNumConfig waterNumConfig= waterNumConfigService.getNumConfigByOpenId(openId);
+        WaterNumConfig waterNumConfig = waterNumConfigService.getNumConfigByOpenId(openId);
         waterDailyInfo.setGoalNum(waterNumConfig.getNum());
         //今日完成
-        WaterUserDay waterUserDay=waterUserDayService.getUserTodayByOpenId(openId);
+        WaterUserDay waterUserDay = waterUserDayService.getUserTodayByOpenId(openId);
         waterDailyInfo.setCompletedNum(waterUserDay.getNum());
         //TODO 下次提醒日期
+        String remindNextTime = userRemindDataService.getRemindNextTimeOpenId(openId);
+        waterDailyInfo.setRemindNextTime(remindNextTime);
         log.info("查询每日喝水信息  waterDailyInfo:{}结束", new Gson().toJson(waterDailyInfo));
-        return Result.putDataOk("daily",waterDailyInfo);
+        return Result.putDataOk("daily", waterDailyInfo);
     }
 
 
     @AutoLog(value = "新增一次喝水信息")
     @PostMapping(value = "/drink/openid/{openid}")
-    public Result addOneWater(@PathVariable("openid") String openId){
+    @Transactional(rollbackFor = Exception.class)
+    public Result addOneWater(@PathVariable("openid") String openId) {
         log.info("新增一次喝水信息,用户凭证 openId:{} 开始", openId);
-        WaterUserDay waterUserDay= waterUserDayService.addOneWater(openId);
-        if(StringUtils.isEmpty(waterUserDay)){
-            return Result.error("新增失败");
+        WaterUserDay waterUserDay = waterUserDayService.addOneWater(openId);
+        //今天的第一次喝水
+        if(waterUserDay.getNum()==1){
+            waterUserCountService.updateUserDrink(openId);
+        }else{
+            waterUserCountService.updateUserDrinkNum(openId);
         }
         log.info("新增一次喝水信息  waterUserDay:{}结束", new Gson().toJson(waterUserDay));
-        return Result.putDataOk("data",waterUserDay);
+        return Result.putDataOk("data", waterUserDay);
     }
 
 
     @AutoLog(value = "查询历史统计信息")
     @GetMapping(value = "/count/openid/{openid}")
-    public Result getWaterDrinks(@PathVariable("openid") String openId){
+    public Result getWaterDrinks(@PathVariable("openid") String openId) {
         log.info("查询历史统计信息,用户凭证 openId:{} 开始", openId);
-        WaterUserCount waterUserCount= waterUserCountService.getUserCountByOpenId(openId);
-        if(StringUtils.isEmpty(waterUserCount)){
+        WaterUserCount waterUserCount = waterUserCountService.getUserCountByOpenId(openId);
+        if (StringUtils.isEmpty(waterUserCount)) {
             return Result.error("获取失败");
         }
         log.info("查询历史统计信息 waterUserCount:{}结束", new Gson().toJson(waterUserCount));
-        return Result.putDataOk("data",waterUserCount);
+        return Result.putDataOk("data", waterUserCount);
     }
 
     @AutoLog(value = "查询我的喝水的配置信息")
     @GetMapping(value = "/config/openid/{openid}")
-    public Result getNumConfig(@PathVariable("openid") String openId){
+    public Result getNumConfig(@PathVariable("openid") String openId) {
         log.info("查询我的喝水的配置信息,用户凭证 openId:{} 开始", openId);
-        WaterNumConfig waterNumConfig= waterNumConfigService.getNumConfigByOpenId(openId);
-        if(StringUtils.isEmpty(waterNumConfig)){
+        WaterNumConfig waterNumConfig = waterNumConfigService.getNumConfigByOpenId(openId);
+        if (StringUtils.isEmpty(waterNumConfig)) {
             return Result.error("获取失败");
         }
         log.info("查询我的喝水的配置信息 waterNumConfig:{}结束", new Gson().toJson(waterNumConfig));
-        return Result.putDataOk("data",waterNumConfig);
+        return Result.putDataOk("data", waterNumConfig);
     }
 
     @AutoLog(value = "更新我的喝水配置信息")
     @PutMapping(value = "/config")
-    public Result updateNumConfig(@RequestBody WaterNumConfig waterNumConfig){
+    public Result updateNumConfig(@RequestBody WaterNumConfig waterNumConfig) {
         log.info("更新我的喝水配置信息,更新信息 WaterNumConfig:{} 开始", new Gson().toJson(waterNumConfig));
         waterNumConfigService.updateById(waterNumConfig);
         log.info("更新我的喝水配置信息 waterNumConfig:{}结束", new Gson().toJson(waterNumConfig));
@@ -114,11 +123,11 @@ public class WaterController {
 
     @AutoLog(value = "查询我的喝水日志信息")
     @GetMapping(value = "/log/openid/{openid}")
-    public Result getUserLog(@PathVariable("openid") String openId){
+    public Result getUserLog(@PathVariable("openid") String openId) {
         log.info("查询我的喝水日志信息,用户凭证 openId:{} ", openId);
-        List<WaterUserLog> userLogs= waterUserLogService.getUserLogsByOpenId(openId);
+        List<WaterUserLog> userLogs = waterUserLogService.getUserLogsByOpenId(openId);
         log.info("查询我的喝水日志信息 userLogs:{}结束", new Gson().toJson(userLogs));
-        return Result.putDataOk("data",userLogs);
+        return Result.putDataOk("data", userLogs);
     }
 
 }

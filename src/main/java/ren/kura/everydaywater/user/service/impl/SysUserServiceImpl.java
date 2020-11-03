@@ -43,8 +43,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
      * {@inheritDoc}
      */
     @Override
-    @Transactional(rollbackFor = RuntimeException.class)
-    public SysUser addUser(String openId) {
+    @Transactional(rollbackFor = Exception.class)
+    public SysUser addUserAndInitConfig(String openId) {
         SysUser sysUser = new SysUser();
         String id = UUID.randomUUID().toString().replace("-", "");
         sysUser.setId(id);

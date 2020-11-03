@@ -48,7 +48,7 @@ public class WeChatController {
         if(StringUtils.isEmpty(user)){
             //注册用户
             log.info("注册用户  openId:{} 结束", openId);
-            sysUserService.addUser(openId);
+            sysUserService.addUserAndInitConfig(openId);
         }
         log.info("通过code用户登陆系统  openId:{} 结束", openId);
         return  Result.putDataOk("openId",openId);

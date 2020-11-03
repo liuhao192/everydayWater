@@ -33,5 +33,5 @@ public interface ISysUserService extends IService<SysUser> {
      * @param openId 微信用户的唯一凭证
      * @return SysUser  新增用户信息
      */
-    SysUser addUser(String openId);
+    SysUser addUserAndInitConfig(String openId);
 }
