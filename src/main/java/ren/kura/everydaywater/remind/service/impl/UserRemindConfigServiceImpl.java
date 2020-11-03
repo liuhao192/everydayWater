@@ -84,32 +84,7 @@ public class UserRemindConfigServiceImpl extends ServiceImpl<UserRemindConfigMap
      * @param userRemindConfig 用户的配置信息
      */
     private void addScheduler(String openId, UserRemindConfig userRemindConfig) {
-        WaterNumConfig numConfigByOpenId = waterNumConfigService.getNumConfigByOpenId(openId);
-        int configNum = numConfigByOpenId.getNum();
-        Date startTime = userRemindConfig.getStartTime();
-        Date endTime = userRemindConfig.getEndTime();
-        int remindInterval = userRemindConfig.getRemindInterval();
-        int isLunch = userRemindConfig.getIsLunch();
-        Date lunchStartTimeTime = userRemindConfig.getLunchStartTime();
-        Date lunchEndTime = userRemindConfig.getLunchEndTime();
-        Calendar calendar = Calendar.getInstance();
-        //设置起时间
-        calendar.setTime(startTime);
-        List<Date> timeList = new ArrayList<>();
-        timeList.add(startTime);
-        for (int i = 0; i < (configNum - 1); i++) {
-            calendar.add(Calendar.MINUTE, remindInterval);
-            //判断是否在开始和结束时间的范围内
-            if (calendar.getTime().after(endTime)) {
-                break;
-            }
-            //判断是否在午休时间内
-            if (isLunch == 1 && calendar.getTime().after(lunchStartTimeTime) && calendar.getTime().before(lunchEndTime)) {
-                i--;
-                continue;
-            }
-            timeList.add(calendar.getTime());
-        }
+        List<Date> timeList = getRemindTimeList(openId, userRemindConfig);
         //新增用户提醒数据
         for (Date date : timeList) {
             UserRemindData remindData = new UserRemindData();
@@ -127,7 +102,49 @@ public class UserRemindConfigServiceImpl extends ServiceImpl<UserRemindConfigMap
         }
     }
 
+    /**
+     * UserRemindConfigServiceImpl:: getRemindTimeList
+     * <p>得到用户提醒间隔时间
+     * <p>HISTORY: 2020/11/3 liuha : Created.
+     *
+     * @param openId           小程序的用户微信的凭证
+     * @param userRemindConfig 用户的定时的配置.
+     * @return List<Date>  用户提醒时间的集合
+     */
+    private List<Date> getRemindTimeList(String openId, UserRemindConfig userRemindConfig) {
+        WaterNumConfig numConfigByOpenId = waterNumConfigService.getNumConfigByOpenId(openId);
+        int configNum = numConfigByOpenId.getNum();
+        Date startTime = userRemindConfig.getStartTime();
+        Date endTime = userRemindConfig.getEndTime();
+        int remindInterval = userRemindConfig.getRemindInterval();
+        int isLunch = userRemindConfig.getIsLunch();
+        Date lunchStartTimeTime = userRemindConfig.getLunchStartTime();
+        Date lunchEndTime = userRemindConfig.getLunchEndTime();
+        Calendar calendar = Calendar.getInstance();
+        //设置起时间
+        calendar.setTime(startTime);
+        List<Date> timeList = new ArrayList<>();
+        timeList.add(startTime);
+        //去掉按照用户开始时间往后按照时间间隔往后推，午休模式继续往后推
+        for (int i = 0; i < (configNum - 1); i++) {
+            calendar.add(Calendar.MINUTE, remindInterval);
+            //判断是否在开始和结束时间的范围内
+            if (calendar.getTime().after(endTime)) {
+                break;
+            }
+            //判断是否在午休时间内
+            if (isLunch == 1 && calendar.getTime().after(lunchStartTimeTime) && calendar.getTime().before(lunchEndTime)) {
+                i--;
+                continue;
+            }
+            timeList.add(calendar.getTime());
+        }
+        return timeList;
+    }
 
+    /**
+     * @{inheritDoc}
+     */
     @Override
     public UserRemindConfig getRemindConfig(String openId) {
         LambdaQueryWrapper<UserRemindConfig> cQuery = new LambdaQueryWrapper<>();
@@ -135,6 +152,9 @@ public class UserRemindConfigServiceImpl extends ServiceImpl<UserRemindConfigMap
         return this.getOne(cQuery);
     }
 
+    /**
+     * @{inheritDoc}
+     */
     @Override
     public UserRemindConfig updateRemindConfig(String openId, UserRemindConfig userRemindConfig) {
         //获取用户的之前的订阅信息
@@ -157,6 +177,9 @@ public class UserRemindConfigServiceImpl extends ServiceImpl<UserRemindConfigMap
         return userRemindConfig;
     }
 
+    /**
+     * @{inheritDoc}
+     */
     @Override
     public int openRemindConfig(String openId) {
         UserRemindConfig remindConfig = getRemindConfigByOpenId(openId);
@@ -174,6 +197,9 @@ public class UserRemindConfigServiceImpl extends ServiceImpl<UserRemindConfigMap
         return 0;
     }
 
+    /**
+     * @{inheritDoc}
+     */
     @Override
     public int closeRemindConfig(String openId) {
         UserRemindConfig remindConfig = getRemindConfigByOpenId(openId);
